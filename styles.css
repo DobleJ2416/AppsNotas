@@ -143,15 +143,58 @@ body.dark-mode .ql-editor.ql-blank::before { color: var(--text-muted) !important
 }
 
 /* =========================================
-   8. DISEÑO RESPONSIVO (Móviles / Tablets)
+   8. DISEÑO RESPONSIVO AVANZADO (Móviles / Tablets)
    ========================================= */
 @media (max-width: 768px) {
-    .app-container { flex-direction: column; height: auto; min-height: 100vh; }
-    .sidebar, .notes-list { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); padding: 15px; }
-    .notes-list { max-height: 35vh; }
-    .editor { width: 100%; padding: 15px; }
-    button { padding: 12px 15px; font-size: 0.95rem; width: 100%; margin-bottom: 5px; }
-    .editor-actions { display: flex; flex-direction: column; gap: 10px; }
-    #editor-container { height: 50vh !important; }
+    /* Contenedor principal adaptable */
+    .app-container { flex-direction: column; height: 100vh; overflow-y: auto; }
+    
+    /* 1. Panel de Materias: Menú superior horizontal */
+    .sidebar { 
+        width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); 
+        padding: 15px; 
+        display: grid; /* Magia para reorganizar sin tocar HTML */
+        grid-template-columns: 1fr 1fr; 
+        gap: 10px;
+    }
+    
+    /* Ocultamos el título "Materias" para ahorrar espacio visual */
+    .sidebar h2 { display: none; } 
+    
+    /* Convertimos la lista de materias en "Chips" horizontales deslizables */
+    #lista-materias { 
+        grid-column: 1 / -1; 
+        display: flex; flex-direction: row; gap: 10px; 
+        overflow-x: auto; padding-bottom: 8px;
+    }
+    #lista-materias::-webkit-scrollbar { height: 4px; }
+    #lista-materias::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+    #lista-materias li { 
+        white-space: nowrap; margin-bottom: 0; padding: 8px 16px; 
+        border-radius: 20px; border: 1px solid var(--border-color); 
+        font-size: 0.85rem; font-weight: 500;
+    }
+    
+    /* Botones lado a lado */
+    #btn-nueva-materia { grid-column: 1 / 2; width: 100%; margin: 0; font-size: 0.85rem; padding: 8px; }
+    #btn-tema { grid-column: 2 / 3; width: 100%; margin: 0; font-size: 0.85rem; padding: 8px; }
+
+    /* 2. Panel de Apuntes: Más compacto */
+    .notes-list { 
+        width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); 
+        padding: 15px; max-height: 28vh; /* Límite para no empujar el editor */
+    }
+    #titulo-materia-actual { font-size: 1.1rem; margin-bottom: 10px; }
+    
+    /* 3. Editor: Ajuste para teclado táctil */
+    .editor { width: 100%; padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
+    #input-titulo { font-size: 1.3rem; padding: 5px 0; margin-bottom: 10px; }
+    #editor-container { flex-grow: 1; min-height: 35vh; height: auto !important; } 
+    
+    /* Botones de acción ergonómicos (grandes para los pulgares) */
+    .editor-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
+    .editor-actions button { width: 100%; padding: 12px; font-size: 1rem; margin: 0; }
+    
+    /* Modal adaptado a la pantalla pequeña */
     .modal-box { width: 95%; padding: 20px; }
 }
