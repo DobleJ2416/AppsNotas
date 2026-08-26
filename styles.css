@@ -205,17 +205,35 @@ body.dark-mode .ql-editor.ql-blank::before { color: var(--text-muted) !important
     /* El contenedor del texto toma todo el espacio posible */
     #editor-container { flex-grow: 1; min-height: 45vh; height: auto !important; margin-bottom: 15px; }
     
-    /* Rejilla inteligente para los botones inferiores (Ahorro de espacio) */
+    /* Rejilla inteligente para los botones inferiores (Corregida) */
     .editor-actions { 
         display: grid; 
         grid-template-columns: 1fr 1fr; 
+        grid-template-rows: auto auto; /* Forzamos explícitamente 2 filas */
         gap: 10px; 
     }
     
-    /* El botón de guardar es la prioridad y ocupa las dos columnas */
-    #btn-guardar { grid-column: 1 / -1; padding: 14px; font-size: 1.05rem; }
+    /* Fila 1: Botones secundarios alineados perfectamente */
+    #btn-exportar-pdf { grid-column: 1 / 2; grid-row: 1 / 2; margin: 0 !important; width: 100%; padding: 10px; font-size: 0.9rem; }
+    #btn-eliminar { grid-column: 2 / 3; grid-row: 1 / 2; margin: 0 !important; width: 100%; padding: 10px; font-size: 0.9rem; }
     
-    /* Botones secundarios comparten la fila inferior */
-    #btn-exportar-pdf { grid-column: 1 / 2; margin: 0 !important; padding: 10px; font-size: 0.9rem; }
-    #btn-eliminar { grid-column: 2 / 3; margin: 0 !important; padding: 10px; font-size: 0.9rem; }
+    /* Fila 2: El botón principal debajo y ocupando todo el ancho */
+    #btn-guardar { grid-column: 1 / -1; grid-row: 2 / 3; margin: 0 !important; width: 100%; padding: 14px; font-size: 1.05rem; }
+
+    /* =========================================
+       CORRECCIÓN DE NOTIFICACIONES (TOASTS) MÓVIL
+       ========================================= */
+    #toast-container {
+        /* Estiramos el contenedor de lado a lado dejando 20px de margen */
+        left: 20px;
+        right: 20px;
+        bottom: 20px;
+        align-items: center; /* Centramos el contenido */
+    }
+    
+    .toast {
+        width: 100%; /* La alerta toma todo el ancho disponible */
+        text-align: center;
+        box-sizing: border-box;
+    }
 }
