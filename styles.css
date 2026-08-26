@@ -143,6 +143,35 @@ body.dark-mode .ql-editor.ql-blank::before { color: var(--text-muted) !important
 }
 
 /* =========================================
+   7.5 MEJORAS DE DISEÑO PARA ESCRITORIO (PC)
+   ========================================= */
+   
+/* 1. Barras de desplazamiento modernas (Estilo macOS / minimalista) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* 2. Barra de Herramientas de la Materia (Panel 2) */
+/* Forzamos a "Nuevo Apunte" a ocupar toda la línea superior. Editar y Eliminar se dividen abajo automáticamente */
+#btn-nuevo-apunte { width: 100% !important; margin-bottom: 2px; }
+
+/* 3. Barra de Acciones del Editor (Panel 3) */
+.editor-actions {
+    display: flex;
+    justify-content: flex-end; /* Alineamos las acciones principales a la derecha */
+    align-items: center;
+    gap: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color); /* Línea divisoria muy sutil para separar el editor */
+}
+
+/* UX Clásica: Empujamos el botón destructivo (Eliminar) a la extrema izquierda */
+#btn-eliminar {
+    margin-right: auto !important; 
+}
+
+/* =========================================
    8. DISEÑO RESPONSIVO (Vistas Nativas Móviles)
    ========================================= */
 @media (max-width: 768px) {
