@@ -1,7 +1,7 @@
 // app.js (Controlador Principal)
 
 // 1. Importamos la Base de Datos y la Interfaz Visual
-import { db, storage, collection, addDoc, getDocs, query, where, serverTimestamp, doc, updateDoc, orderBy, deleteDoc, ref, uploadBytes, getDownloadURL } from './firebase.js';
+import { db, storage, auth, provider, signInWithPopup, onAuthStateChanged, signOut, collection, addDoc, getDocs, query, where, serverTimestamp, doc, updateDoc, orderBy, deleteDoc, ref, uploadBytes, getDownloadURL } from './firebase.js';
 import { mostrarNotificacion, mostrarModal, inicializarTema } from './ui.js';
 
 // 2. Inicializamos Componentes Independientes
@@ -29,6 +29,7 @@ const btnVolverMovil = document.getElementById('btn-volver-movil');
 const loginOverlay = document.getElementById('login-overlay');
 const btnLoginLocal = document.getElementById('btn-login-local');
 const btnLoginGoogle = document.getElementById('btn-login-google');
+const btnLoginSidebar = document.getElementById('btn-login');
 
 // 5. Configuración del Editor Quill
 const quill = new Quill('#editor-container', {
@@ -377,15 +378,42 @@ btnLoginLocal.addEventListener('click', () => {
     cargarMaterias(); // Arrancamos la aplicación
 });
 
-// Acción: Elegir iniciar sesión (Dejamos la puerta abierta para el siguiente paso)
-btnLoginGoogle.addEventListener('click', () => {
-    // Aquí conectaremos Firebase Authentication en el siguiente paso. 
-    // Por ahora lo simulamos.
-    localStorage.setItem('modoApp', 'online');
-    loginOverlay.classList.add('oculto');
-    mostrarNotificacion("Iniciando sesión en la nube...");
+// Acción: Iniciar sesión con Google de forma real
+btnLoginGoogle.addEventListener('click', async () => {
+    try {
+        // Esto abre la ventana emergente oficial de Google
+        const resultado = await signInWithPopup(auth, provider);
+        const usuario = resultado.user;
+        
+        localStorage.setItem('modoApp', 'online');
+        loginOverlay.classList.add('oculto');
+        mostrarNotificacion(`¡Bienvenido, ${usuario.displayName}!`);
+        
+        cargarMaterias();
+    } catch (error) {
+        console.error("Error en login:", error);
+        mostrarNotificacion("Error al intentar iniciar sesión.");
+    }
+});
 
-    cargarMaterias();
+// Observador en tiempo real del estado del usuario
+onAuthStateChanged(auth, (usuario) => {
+    if (usuario) {
+        // Si hay un usuario logueado en la nube
+        btnLoginSidebar.innerHTML = `🚪 <span class="texto-oculto-movil">Cerrar Sesión</span>`;
+        btnLoginSidebar.onclick = async () => {
+            await signOut(auth); // Cierra sesión en Firebase
+            localStorage.removeItem('modoApp'); // Borra la caché
+            location.reload(); // Recarga la página para mostrar la pantalla de bienvenida
+        };
+    } else {
+        // Si el usuario está en modo desconectado local
+        btnLoginSidebar.innerHTML = `👤 <span class="texto-oculto-movil">Ingresar</span>`;
+        btnLoginSidebar.onclick = () => {
+            localStorage.removeItem('modoApp');
+            location.reload(); 
+        };
+    }
 });
 
 // 9. Arranque de la App
