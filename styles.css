@@ -143,58 +143,43 @@ body.dark-mode .ql-editor.ql-blank::before { color: var(--text-muted) !important
 }
 
 /* =========================================
-   8. DISEÑO RESPONSIVO AVANZADO (Móviles / Tablets)
+   8. DISEÑO RESPONSIVO (Vistas Nativas Móviles)
    ========================================= */
 @media (max-width: 768px) {
-    /* Contenedor principal adaptable */
-    .app-container { flex-direction: column; height: 100vh; overflow-y: auto; }
-    
-    /* 1. Panel de Materias: Menú superior horizontal */
+    /* Evitar que la pantalla se estire infinitamente */
+    .app-container { flex-direction: column; height: 100vh; overflow: hidden; }
+
+    /* ESTADO 1: MODO EXPLORACIÓN (Por defecto) */
     .sidebar { 
         width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); 
-        padding: 15px; 
-        display: grid; /* Magia para reorganizar sin tocar HTML */
-        grid-template-columns: 1fr 1fr; 
-        gap: 10px;
+        padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     }
-    
-    /* Ocultamos el título "Materias" para ahorrar espacio visual */
     .sidebar h2 { display: none; } 
-    
-    /* Convertimos la lista de materias en "Chips" horizontales deslizables */
     #lista-materias { 
-        grid-column: 1 / -1; 
-        display: flex; flex-direction: row; gap: 10px; 
+        grid-column: 1 / -1; display: flex; flex-direction: row; gap: 10px; 
         overflow-x: auto; padding-bottom: 8px;
     }
-    #lista-materias::-webkit-scrollbar { height: 4px; }
-    #lista-materias::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-    #lista-materias li { 
-        white-space: nowrap; margin-bottom: 0; padding: 8px 16px; 
-        border-radius: 20px; border: 1px solid var(--border-color); 
-        font-size: 0.85rem; font-weight: 500;
-    }
-    
-    /* Botones lado a lado */
-    #btn-nueva-materia { grid-column: 1 / 2; width: 100%; margin: 0; font-size: 0.85rem; padding: 8px; }
-    #btn-tema { grid-column: 2 / 3; width: 100%; margin: 0; font-size: 0.85rem; padding: 8px; }
+    #lista-materias li { white-space: nowrap; border-radius: 20px; border: 1px solid var(--border-color); font-size: 0.85rem; padding: 8px 16px;}
+    #btn-nueva-materia, #btn-tema { width: 100%; margin: 0; padding: 10px; font-size: 0.85rem; }
 
-    /* 2. Panel de Apuntes: Más compacto */
     .notes-list { 
-        width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); 
-        padding: 15px; max-height: 28vh; /* Límite para no empujar el editor */
+        width: 100%; border-right: none; padding: 15px; 
+        flex-grow: 1; overflow-y: auto; max-height: none; 
     }
-    #titulo-materia-actual { font-size: 1.1rem; margin-bottom: 10px; }
     
-    /* 3. Editor: Ajuste para teclado táctil */
-    .editor { width: 100%; padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
-    #input-titulo { font-size: 1.3rem; padding: 5px 0; margin-bottom: 10px; }
-    #editor-container { flex-grow: 1; min-height: 35vh; height: auto !important; } 
+    /* El editor nace oculto en móviles */
+    .editor { display: none; width: 100%; height: 100vh; padding: 15px; overflow-y: auto; }
+
+    /* ESTADO 2: MODO EDICIÓN (Cuando se activa una nota) */
+    body.mobile-editing .sidebar { display: none; }
+    body.mobile-editing .notes-list { display: none; }
+    body.mobile-editing .editor { display: flex; flex-direction: column; }
+
+    /* Controles exclusivos del editor móvil */
+    #btn-volver-movil { display: block !important; }
+    #input-titulo { font-size: 1.3rem; margin-bottom: 15px; }
+    #editor-container { flex-grow: 1; min-height: 50vh; height: auto !important; margin-bottom: 15px; }
     
-    /* Botones de acción ergonómicos (grandes para los pulgares) */
-    .editor-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
-    .editor-actions button { width: 100%; padding: 12px; font-size: 1rem; margin: 0; }
-    
-    /* Modal adaptado a la pantalla pequeña */
-    .modal-box { width: 95%; padding: 20px; }
+    .editor-actions { display: flex; flex-direction: column; gap: 10px; }
+    .editor-actions button { width: 100%; margin: 0; padding: 12px; font-size: 1rem; }
 }

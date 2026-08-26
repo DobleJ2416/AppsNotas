@@ -25,6 +25,7 @@ const selectOrden = document.getElementById('select-orden-fecha');
 const controlesFiltro = document.getElementById('controles-filtro');
 const btnExportarPdf = document.getElementById('btn-exportar-pdf');
 const listaApuntesDOM = document.getElementById('lista-apuntes');
+const btnVolverMovil = document.getElementById('btn-volver-movil');
 
 // 5. Configuración del Editor Quill
 const quill = new Quill('#editor-container', {
@@ -81,6 +82,9 @@ function bloquearEditor() {
     btnExportarPdf.style.display = 'none';
     quill.root.innerHTML = "";
     quill.enable(false);
+
+    // Salimos del modo edición en móvil
+    document.body.classList.remove('mobile-editing');
 }
 
 function habilitarEditor() {
@@ -88,6 +92,9 @@ function habilitarEditor() {
     btnGuardar.disabled = false;
     quill.enable(true);
     btnExportarPdf.style.display = 'inline-block';
+
+    // Entramos al modo edición en móvil
+    document.body.classList.add('mobile-editing');
 }
 
 function procesarFiltros() {
@@ -194,6 +201,10 @@ btnNuevoApunte.addEventListener('click', () => {
     quill.root.innerHTML = "";
     inputTitulo.focus();
     btnEliminar.style.display = 'none';
+});
+
+btnVolverMovil.addEventListener('click', () => {
+    bloquearEditor(); // Esto limpia el editor y nos regresa a las listas
 });
 
 btnGuardar.addEventListener('click', async () => {
