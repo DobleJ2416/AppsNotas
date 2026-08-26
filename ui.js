@@ -61,20 +61,21 @@ export function inicializarTema(btnTemaId) {
     const btnTema = document.getElementById(btnTemaId);
     const temaGuardado = localStorage.getItem('tema');
     
+    // Usamos innerHTML en lugar de textContent para mantener la etiqueta <span>
     if (temaGuardado === 'oscuro') {
         document.body.classList.add('dark-mode');
-        btnTema.textContent = "☀️ Modo Claro";
+        btnTema.innerHTML = "☀️ <span class='texto-oculto-movil'>Modo Claro</span>";
     } else {
-        btnTema.textContent = "🌙 Modo Oscuro";
+        btnTema.innerHTML = "🌙 <span class='texto-oculto-movil'>Modo Oscuro</span>";
     }
     
     btnTema.addEventListener('click', () => {
         document.body.classList.toggle('dark-mode');
         if (document.body.classList.contains('dark-mode')) {
-            btnTema.textContent = "☀️ Modo Claro";
+            btnTema.innerHTML = "☀️ <span class='texto-oculto-movil'>Modo Claro</span>";
             localStorage.setItem('tema', 'oscuro');
         } else {
-            btnTema.textContent = "🌙 Modo Oscuro";
+            btnTema.innerHTML = "🌙 <span class='texto-oculto-movil'>Modo Oscuro</span>";
             localStorage.setItem('tema', 'claro');
         }
     });

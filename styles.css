@@ -146,36 +146,56 @@ body.dark-mode .ql-editor.ql-blank::before { color: var(--text-muted) !important
    8. DISEÑO RESPONSIVO (Vistas Nativas Móviles)
    ========================================= */
 @media (max-width: 768px) {
-    /* Evitar que la pantalla se estire infinitamente */
+    /* 1. Evitar que la pantalla se desborde hacia abajo */
     .app-container { flex-direction: column; height: 100vh; overflow: hidden; }
 
-    /* ESTADO 1: MODO EXPLORACIÓN (Por defecto) */
+    /* --- ESTADO 1: MODO EXPLORACIÓN --- */
+    
+    /* Panel de Materias: Reordenado con CSS Grid */
     .sidebar { 
         width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); 
-        padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        padding: 15px; 
+        display: grid; 
+        grid-template-columns: 1fr 45px 45px; /* Espacio exacto para los botones cuadrados */
+        grid-template-rows: auto auto;
+        gap: 10px;
     }
     .sidebar h2 { display: none; } 
+    
+    /* Ocultamos los textos de los botones secundarios */
+    .texto-oculto-movil { display: none; }
+
+    /* Posicionamos los elementos (Invirtiendo el orden original del HTML) */
+    #btn-nueva-materia { grid-column: 1 / 2; grid-row: 1 / 2; margin: 0; }
+    
+    /* Transformamos los botones secundarios en círculos perfectos */
+    #btn-tema { grid-column: 2 / 3; grid-row: 1 / 2; margin: 0 !important; padding: 0; border-radius: 50%; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+    #btn-login { grid-column: 3 / 4; grid-row: 1 / 2; margin: 0 !important; padding: 0; border-radius: 50%; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+
+    /* Las materias bajan a la segunda fila */
     #lista-materias { 
-        grid-column: 1 / -1; display: flex; flex-direction: row; gap: 10px; 
+        grid-column: 1 / -1; grid-row: 2 / 3; display: flex; flex-direction: row; gap: 10px; 
         overflow-x: auto; padding-bottom: 8px;
     }
     #lista-materias li { white-space: nowrap; border-radius: 20px; border: 1px solid var(--border-color); font-size: 0.85rem; padding: 8px 16px;}
-    #btn-nueva-materia, #btn-tema { width: 100%; margin: 0; padding: 10px; font-size: 0.85rem; }
 
+    /* Panel de Apuntes con Botón "Pegajoso" (Sticky bottom) */
     .notes-list { 
         width: 100%; border-right: none; padding: 15px; 
-        flex-grow: 1; overflow-y: auto; max-height: none; 
+        flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; 
     }
+    /* El contenedor interior (ul) es el único que hace scroll ahora */
+    #lista-apuntes { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; }
+    /* El botón se queda fijo abajo, sin ser empujado */
+    #btn-nuevo-apunte { flex-shrink: 0; margin-top: auto; }
+
     
-    /* El editor nace oculto en móviles */
+    /* --- ESTADO 2: MODO EDICIÓN --- */
     .editor { display: none; width: 100%; height: 100vh; padding: 15px; overflow-y: auto; }
 
-    /* ESTADO 2: MODO EDICIÓN (Cuando se activa una nota) */
-    body.mobile-editing .sidebar { display: none; }
-    body.mobile-editing .notes-list { display: none; }
+    body.mobile-editing .sidebar, body.mobile-editing .notes-list { display: none; }
     body.mobile-editing .editor { display: flex; flex-direction: column; }
 
-    /* Controles exclusivos del editor móvil */
     #btn-volver-movil { display: block !important; }
     #input-titulo { font-size: 1.3rem; margin-bottom: 15px; }
     #editor-container { flex-grow: 1; min-height: 50vh; height: auto !important; margin-bottom: 15px; }
