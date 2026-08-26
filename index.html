@@ -33,9 +33,10 @@
         <!-- Panel 2: Lista de Apuntes -->
         <section class="notes-list">
             <h2 id="titulo-materia-actual">Selecciona una materia</h2>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="btn-editar-materia" style="display: none; background-color: #f39c12; font-size: 0.8rem; padding: 5px 10px;">✏️ Editar Nombre</button>
-                <button id="btn-eliminar-materia" style="display: none; background-color: var(--danger); font-size: 0.8rem; padding: 5px 10px;">🗑️ Eliminar</button>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                <button id="btn-nuevo-apunte" disabled style="background-color: var(--primary); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">+ Nuevo Apunte</button>
+                <button id="btn-editar-materia" style="display: none; background-color: #f39c12; font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">✏️ Editar</button>
+                <button id="btn-eliminar-materia" style="display: none; background-color: var(--danger); font-size: 0.85rem; padding: 8px 10px; flex-grow: 1;">🗑️ Eliminar</button>
             </div>
 
             <div id="controles-filtro" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 15px;">
@@ -49,7 +50,6 @@
             <ul id="lista-apuntes">
                 <!-- Los apuntes de la materia seleccionada aparecerán aquí -->
             </ul>
-            <button id="btn-nuevo-apunte" disabled>+ Nuevo Apunte</button>
         </section>
 
         <!-- Panel 3: Editor -->
