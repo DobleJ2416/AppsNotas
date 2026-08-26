@@ -26,6 +26,9 @@ const controlesFiltro = document.getElementById('controles-filtro');
 const btnExportarPdf = document.getElementById('btn-exportar-pdf');
 const listaApuntesDOM = document.getElementById('lista-apuntes');
 const btnVolverMovil = document.getElementById('btn-volver-movil');
+const loginOverlay = document.getElementById('login-overlay');
+const btnLoginLocal = document.getElementById('btn-login-local');
+const btnLoginGoogle = document.getElementById('btn-login-google');
 
 // 5. Configuración del Editor Quill
 const quill = new Quill('#editor-container', {
@@ -193,6 +196,22 @@ async function cargarApuntesDeMateria(materiaId) {
     }
 }
 
+// 7.5 Sistema de verificación de arranque
+function verificarEstadoApp() {
+    // Leemos la memoria del navegador para ver si ya tomó una decisión antes
+    const modoApp = localStorage.getItem('modoApp');
+
+    if (modoApp) {
+        // Ya existe un registro (es su segunda vez o más). Ocultamos la ventana.
+        loginOverlay.classList.add('oculto');
+
+        // IMPORTANTE: Solo cargamos la base de datos si ya pasamos la pantalla de bienvenida
+        cargarMaterias(); 
+    } else {
+        // Es la primera vez. La ventana se queda visible y no cargamos datos aún.
+    }
+}
+
 // 8. Event Listeners (Botones y Acciones)
 btnNuevoApunte.addEventListener('click', () => {
     apunteActivoId = null;
@@ -349,5 +368,25 @@ btnExportarPdf.addEventListener('click', () => {
     document.title = tituloOriginal;
 });
 
+// Acción: Elegir el Modo Desconectado
+btnLoginLocal.addEventListener('click', () => {
+    localStorage.setItem('modoApp', 'local'); // Guardamos la decisión
+    loginOverlay.classList.add('oculto');     // Quitamos la ventana
+    mostrarNotificacion("Modo desconectado activado");
+
+    cargarMaterias(); // Arrancamos la aplicación
+});
+
+// Acción: Elegir iniciar sesión (Dejamos la puerta abierta para el siguiente paso)
+btnLoginGoogle.addEventListener('click', () => {
+    // Aquí conectaremos Firebase Authentication en el siguiente paso. 
+    // Por ahora lo simulamos.
+    localStorage.setItem('modoApp', 'online');
+    loginOverlay.classList.add('oculto');
+    mostrarNotificacion("Iniciando sesión en la nube...");
+
+    cargarMaterias();
+});
+
 // 9. Arranque de la App
-cargarMaterias();
+verificarEstadoApp();

@@ -266,3 +266,44 @@ body.dark-mode .ql-editor.ql-blank::before { color: var(--text-muted) !important
         box-sizing: border-box;
     }
 }
+
+/* =========================================
+   9. PANTALLA DE BIENVENIDA Y LOGIN
+   ========================================= */
+.login-pantalla {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: var(--bg-color); /* Respeta el modo oscuro/claro */
+    display: flex; justify-content: center; align-items: center;
+    z-index: 20000; /* Siempre por encima de toda la app */
+    transition: opacity 0.4s ease, visibility 0.4s;
+}
+/* Clase para desvanecer la ventana suavemente */
+.login-pantalla.oculto { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.login-card {
+    background-color: var(--panel-bg);
+    padding: 40px; border-radius: 16px; width: 90%; max-width: 450px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border: 1px solid var(--border-color);
+}
+.login-card h1 { font-size: 1.8rem; margin-bottom: 15px; color: var(--text-color); }
+.login-card p { color: var(--text-muted); margin-bottom: 25px; font-size: 1rem; line-height: 1.5; }
+
+.login-acciones { display: flex; flex-direction: column; gap: 12px; }
+.btn-google {
+    background-color: var(--panel-bg); color: var(--text-color);
+    border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 1.05rem; padding: 12px;
+}
+.btn-google:hover { background-color: var(--sidebar-bg); }
+
+.login-divisor { position: relative; text-align: center; margin: 10px 0; }
+.login-divisor::before, .login-divisor::after {
+    content: ""; position: absolute; top: 50%; width: 42%; height: 1px; background: var(--border-color);
+}
+.login-divisor::before { left: 0; }
+.login-divisor::after { right: 0; }
+.login-divisor span { color: var(--text-muted); font-size: 0.9rem; background: var(--panel-bg); padding: 0 10px; }
+
+.login-nota { font-size: 0.8rem !important; margin-top: 20px; margin-bottom: 0 !important; }
