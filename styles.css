@@ -61,7 +61,7 @@ button {
     background-color: var(--primary); color: white; border: none;
     transition: all 0.2s ease;
 }
-button:disabled { background-color: var(--border-color); cursor: not-allowed; color: var(--text-muted); }
+button:disabled { background-color: var(--border-color) !important; cursor: not-allowed; color: var(--text-muted); }
 button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.1); }
 
 /* =========================================
@@ -198,9 +198,24 @@ body.dark-mode .ql-editor.ql-blank::before { color: var(--text-muted) !important
     body.mobile-editing .editor { display: flex; flex-direction: column; }
 
     #btn-volver-movil { display: block !important; }
-    #input-titulo { font-size: 1.3rem; margin-bottom: 15px; }
-    #editor-container { flex-grow: 1; min-height: 50vh; height: auto !important; margin-bottom: 15px; }
     
-    .editor-actions { display: flex; flex-direction: column; gap: 10px; }
-    .editor-actions button { width: 100%; margin: 0; padding: 12px; font-size: 1rem; }
+    /* Título más grande e integrado al fondo */
+    #input-titulo { font-size: 1.5rem; font-weight: 700; margin-bottom: 10px; padding-bottom: 5px; }
+    
+    /* El contenedor del texto toma todo el espacio posible */
+    #editor-container { flex-grow: 1; min-height: 45vh; height: auto !important; margin-bottom: 15px; }
+    
+    /* Rejilla inteligente para los botones inferiores (Ahorro de espacio) */
+    .editor-actions { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 10px; 
+    }
+    
+    /* El botón de guardar es la prioridad y ocupa las dos columnas */
+    #btn-guardar { grid-column: 1 / -1; padding: 14px; font-size: 1.05rem; }
+    
+    /* Botones secundarios comparten la fila inferior */
+    #btn-exportar-pdf { grid-column: 1 / 2; margin: 0 !important; padding: 10px; font-size: 0.9rem; }
+    #btn-eliminar { grid-column: 2 / 3; margin: 0 !important; padding: 10px; font-size: 0.9rem; }
 }
