@@ -185,7 +185,7 @@ body.dark-mode .ql-editor.ql-blank::before { color: var(--text-muted) !important
         width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); 
         padding: 15px; 
         display: grid; 
-        grid-template-columns: 1fr 45px 45px; /* Espacio exacto para los botones cuadrados */
+        grid-template-columns: 1fr 45px 45px 45px; /* Espacio exacto para los botones cuadrados */
         grid-template-rows: auto auto;
         gap: 10px;
     }
@@ -197,9 +197,10 @@ body.dark-mode .ql-editor.ql-blank::before { color: var(--text-muted) !important
     /* Posicionamos los elementos (Invirtiendo el orden original del HTML) */
     #btn-nueva-materia { grid-column: 1 / 2; grid-row: 1 / 2; margin: 0; }
     
-    /* Transformamos los botones secundarios en círculos perfectos */
-    #btn-tema { grid-column: 2 / 3; grid-row: 1 / 2; margin: 0 !important; padding: 0; border-radius: 50%; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
-    #btn-login { grid-column: 3 / 4; grid-row: 1 / 2; margin: 0 !important; padding: 0; border-radius: 50%; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+    /* Transformamos los 3 botones secundarios en círculos perfectos */
+    #btn-info { grid-column: 2 / 3; grid-row: 1 / 2; margin: 0 !important; padding: 0; border-radius: 50%; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+    #btn-tema { grid-column: 3 / 4; grid-row: 1 / 2; margin: 0 !important; padding: 0; border-radius: 50%; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+    #btn-login { grid-column: 4 / 5; grid-row: 1 / 2; margin: 0 !important; padding: 0; border-radius: 50%; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
 
     /* Las materias bajan a la segunda fila */
     #lista-materias { 

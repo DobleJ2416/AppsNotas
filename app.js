@@ -27,6 +27,7 @@ const loginOverlay = document.getElementById('login-overlay');
 const btnLoginLocal = document.getElementById('btn-login-local');
 const btnLoginGoogle = document.getElementById('btn-login-google');
 const btnLoginSidebar = document.getElementById('btn-login');
+const btnInfo = document.getElementById('btn-info');
 
 // --- HERRAMIENTAS LOCALES (OFFLINE) ---
 const getModo = () => localStorage.getItem('modoApp') || 'local';
@@ -317,6 +318,21 @@ btnVolverMovil.addEventListener('click', bloquearEditor);
 inputBuscar.addEventListener('input', procesarFiltros);
 selectOrden.addEventListener('change', procesarFiltros);
 btnExportarPdf.addEventListener('click', () => { const original = document.title; document.title = inputTitulo.value || 'Apunte'; window.print(); document.title = original; });
+btnInfo.addEventListener('click', () => {
+    mostrarModal({
+        titulo: "Acerca de",
+        mensaje: `
+            <div style="text-align: left; margin-top: 10px;">
+                <strong>Mis Apuntes</strong><br>
+                <span style="color: var(--text-muted);">Versión 1.0.0</span><br><br>
+                Desarrollado para organizar notas y proyectos de Ingeniería Mecatrónica en el IPN.<br><br>
+                <em>Tecnologías: JavaScript, Firebase, CSS Grid, Quill.js</em>
+            </div>
+        `,
+        tipo: 'info',
+        esHTML: true // Le indicamos al modal que interprete las etiquetas <strong> y <br>
+    });
+});
 
 // --- SISTEMA DE LOGIN Y ARRANQUE ---
 btnLoginLocal.addEventListener('click', () => {

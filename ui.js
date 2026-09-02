@@ -15,7 +15,7 @@ export function mostrarNotificacion(mensaje) {
     }, 3000);
 }
 
-export function mostrarModal({ titulo, mensaje, tipo = 'confirm', valorInicial = '' }) {
+export function mostrarModal({ titulo, mensaje, tipo = 'confirm', valorInicial = '', esHTML = false }) {
     return new Promise((resolve) => {
         const overlay = document.getElementById('modal-overlay');
         const tituloEl = document.getElementById('modal-titulo');
@@ -26,14 +26,26 @@ export function mostrarModal({ titulo, mensaje, tipo = 'confirm', valorInicial =
         let btnConfirmar = document.getElementById('modal-btn-confirmar');
         
         tituloEl.textContent = titulo;
-        mensajeEl.textContent = mensaje;
         
+        // NUEVO: Permite inyectar HTML si se solicita, si no, usa texto plano seguro
+        if (esHTML) {
+            mensajeEl.innerHTML = mensaje;
+        } else {
+            mensajeEl.textContent = mensaje;
+        }
+        
+        // Configuración de los botones y campos según el tipo
         if (tipo === 'prompt') {
             inputEl.style.display = 'block';
             inputEl.value = valorInicial;
+            btnCancelar.style.display = 'inline-block';
             setTimeout(() => inputEl.focus(), 100);
+        } else if (tipo === 'info') {
+            inputEl.style.display = 'none';
+            btnCancelar.style.display = 'none'; // Ocultamos el botón "Cancelar"
         } else {
             inputEl.style.display = 'none';
+            btnCancelar.style.display = 'inline-block';
         }
         
         overlay.classList.remove('modal-oculto');
