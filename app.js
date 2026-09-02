@@ -204,17 +204,19 @@ async function cargarApuntesDeMateria(materiaId) {
 
 // 7.5 Sistema de verificación de arranque
 function verificarEstadoApp() {
-    // Leemos la memoria del navegador para ver si ya tomó una decisión antes
     const modoApp = localStorage.getItem('modoApp');
-
+    
     if (modoApp) {
-        // Ya existe un registro (es su segunda vez o más). Ocultamos la ventana.
+        // Ya existe un registro. Ocultamos la ventana.
         loginOverlay.classList.add('oculto');
-
-        // IMPORTANTE: Solo cargamos la base de datos si ya pasamos la pantalla de bienvenida
-        cargarMaterias(); 
+        
+        // IMPORTANTE: Solo cargamos directo si es modo local. 
+        // Si es online, esperaremos a que Firebase confirme la sesión.
+        if (modoApp === 'local') {
+            cargarMaterias(); 
+        }
     } else {
-        // Es la primera vez. La ventana se queda visible y no cargamos datos aún.
+        // Es la primera vez. La ventana se queda visible.
     }
 }
 
@@ -421,8 +423,14 @@ onAuthStateChanged(auth, (usuario) => {
         btnLoginSidebar.onclick = async () => {
             await signOut(auth); // Cierra sesión en Firebase
             localStorage.removeItem('modoApp'); // Borra la caché
-            location.reload(); // Recarga la página para mostrar la pantalla de bienvenida
+            location.reload(); // Recarga la página
         };
+        
+        // NUEVO: Ahora sí, ya tenemos tu ID. Cargamos la base de datos de la nube.
+        if (localStorage.getItem('modoApp') === 'online') {
+            cargarMaterias();
+        }
+        
     } else {
         // Si el usuario está en modo desconectado local
         btnLoginSidebar.innerHTML = `👤 <span class="texto-oculto-movil">Ingresar</span>`;
@@ -430,6 +438,12 @@ onAuthStateChanged(auth, (usuario) => {
             localStorage.removeItem('modoApp');
             location.reload(); 
         };
+        
+        // NUEVO: Si la sesión de Google caducó pero la app creía que estabas online, te reiniciamos
+        if (localStorage.getItem('modoApp') === 'online') {
+            localStorage.removeItem('modoApp');
+            location.reload();
+        }
     }
 });
 
