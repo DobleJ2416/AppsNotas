@@ -164,11 +164,22 @@ async function cargarApuntesDeMateria(materiaId) {
 
     if (getModo() === 'online') {
         try {
-            const q = query(collection(db, "apuntes"), where("materia_id", "==", materiaId), orderBy("fecha", "desc"));
+            const usuarioId = auth.currentUser?.uid;
+            if(!usuarioId) return;
+            
+            // NUEVO: Agregamos el filtro where("usuario_id", "==", usuarioId)
+            const q = query(
+                collection(db, "apuntes"), 
+                where("materia_id", "==", materiaId), 
+                where("usuario_id", "==", usuarioId),
+                orderBy("fecha", "desc")
+            );
+            
             const querySnapshot = await getDocs(q);
             querySnapshot.forEach(doc => apuntes.push({ id: doc.id, ...doc.data() }));
         } catch (error) {
-            listaApuntesDOM.innerHTML = "<li>Error al cargar.</li>"; return;
+            console.error("Error Firestore:", error); // <-- Clave para el Paso 2
+            listaApuntesDOM.innerHTML = "<li>Error de permisos o índice. Revisa la consola (F12).</li>"; return;
         }
     } else {
         const todosLosApuntes = leerBDLocal('bd_apuntes');
