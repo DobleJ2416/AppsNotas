@@ -124,7 +124,12 @@ function procesarFiltros() {
 async function cargarMaterias() {
     listaMateriasDOM.innerHTML = "Cargando materias...";
     try {
-        const querySnapshot = await getDocs(collection(db, "materias"));
+        // ¿Quién está pidiendo las materias?
+        const usuarioId = auth.currentUser ? auth.currentUser.uid : 'local';
+        
+        // Creamos una consulta (query) con filtro (where)
+        const consulta = query(collection(db, "materias"), where("usuario_id", "==", usuarioId));
+        const querySnapshot = await getDocs(consulta);
         listaMateriasDOM.innerHTML = "";
         
         if (querySnapshot.empty) {
@@ -241,11 +246,15 @@ btnGuardar.addEventListener('click', async () => {
                 contenido: quill.root.innerHTML
             });
         } else {
+            // Identificamos quién es el usuario actual
+            const usuarioId = auth.currentUser ? auth.currentUser.uid : 'local';
+
             await addDoc(collection(db, "apuntes"), {
                 materia_id: materiaActivaId,
                 titulo: inputTitulo.value,
                 contenido: quill.root.innerHTML,
-                fecha: serverTimestamp()
+                fecha: serverTimestamp(),
+                usuario_id: usuarioId // <-- NUEVA ETIQUETA
             });
         }
         cargarApuntesDeMateria(materiaActivaId);
@@ -289,7 +298,15 @@ btnNuevaMateria.addEventListener('click', async () => {
     const nombreMateria = await mostrarModal({ titulo: "Nueva Materia", mensaje: "Ingresa el nombre:", tipo: "prompt" });
     if (nombreMateria && nombreMateria.trim() !== "") {
         try {
-            await addDoc(collection(db, "materias"), { nombre: nombreMateria.trim() });
+            // Identificamos quién es el usuario actual
+            const usuarioId = auth.currentUser ? auth.currentUser.uid : 'local';
+
+            // Guardamos la materia adjuntando tu ID
+            await addDoc(collection(db, "materias"), { 
+                nombre: nombreMateria.trim(),
+                usuario_id: usuarioId // <-- NUEVA ETIQUETA
+            });
+            
             mostrarNotificacion("Materia creada con éxito");
             cargarMaterias();
         } catch (error) {
@@ -384,17 +401,17 @@ btnLoginGoogle.addEventListener('click', async () => {
         // Esto abre la ventana emergente oficial de Google
         const resultado = await signInWithPopup(auth, provider);
         const usuario = resultado.user;
-        
+                 
         localStorage.setItem('modoApp', 'online');
         loginOverlay.classList.add('oculto');
         mostrarNotificacion(`¡Bienvenido, ${usuario.displayName}!`);
-        
+                 
         cargarMaterias();
     } catch (error) {
         console.error("Error en login:", error);
         mostrarNotificacion("Error al intentar iniciar sesión.");
     }
-});
+}); // <-- Asegúrate de que termine así
 
 // Observador en tiempo real del estado del usuario
 onAuthStateChanged(auth, (usuario) => {
