@@ -1,17 +1,14 @@
-// app.js (Controlador Principal)
+// app.js (Controlador Principal con Enrutamiento Dual)
 
-// 1. Importamos la Base de Datos y la Interfaz Visual
 import { db, storage, auth, provider, signInWithPopup, onAuthStateChanged, signOut, collection, addDoc, getDocs, query, where, serverTimestamp, doc, updateDoc, orderBy, deleteDoc, ref, uploadBytes, getDownloadURL } from './firebase.js';
 import { mostrarNotificacion, mostrarModal, inicializarTema } from './ui.js';
 
-// 2. Inicializamos Componentes Independientes
 inicializarTema('btn-tema');
 
-// 3. Variables de Estado Global
+// --- VARIABLES Y DOM ---
 let materiaActivaId = null;
 let apunteActivoId = null;
 
-// 4. Elementos del DOM
 const listaMateriasDOM = document.getElementById('lista-materias');
 const btnNuevaMateria = document.getElementById('btn-nueva-materia');
 const btnNuevoApunte = document.getElementById('btn-nuevo-apunte');
@@ -31,7 +28,13 @@ const btnLoginLocal = document.getElementById('btn-login-local');
 const btnLoginGoogle = document.getElementById('btn-login-google');
 const btnLoginSidebar = document.getElementById('btn-login');
 
-// 5. Configuración del Editor Quill
+// --- HERRAMIENTAS LOCALES (OFFLINE) ---
+const getModo = () => localStorage.getItem('modoApp') || 'local';
+const leerBDLocal = (tabla) => JSON.parse(localStorage.getItem(tabla)) || [];
+const guardarBDLocal = (tabla, datos) => localStorage.setItem(tabla, JSON.stringify(datos));
+const generarIdLocal = () => 'loc_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+
+// --- CONFIGURACIÓN DE QUILL ---
 const quill = new Quill('#editor-container', {
     theme: 'snow',
     placeholder: 'Escribe tus apuntes aquí...',
@@ -43,17 +46,19 @@ const quill = new Quill('#editor-container', {
                 ['bold', 'italic', 'underline'],
                 ['formula', 'code-block'],
                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                ['image'] // Se agregó el botón nativo de imagen si lo necesitas a futuro
+                ['image']
             ],
-            handlers: {
-                image: manejadorDeImagenes
-            }
+            handlers: { image: manejadorDeImagenes }
         }
     }
 });
 quill.enable(false);
 
 async function manejadorDeImagenes() {
+    if (getModo() === 'local') {
+        mostrarNotificacion("Las imágenes solo están disponibles en modo online");
+        return;
+    }
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
     input.setAttribute('accept', 'image/*');
@@ -70,34 +75,24 @@ async function manejadorDeImagenes() {
             const urlDescarga = await getDownloadURL(storageRef);
             quill.insertEmbed(rango.index, 'image', urlDescarga);
         } catch (error) {
-            console.error("Error al subir la imagen:", error);
-            mostrarNotificacion("Hubo un error al subir la imagen.");
+            console.error("Error al subir:", error);
+            mostrarNotificacion("Error al subir la imagen.");
         }
     };
 }
 
-// 6. Funciones Lógicas del DOM
+// --- INTERFAZ (UI) ---
 function bloquearEditor() {
-    inputTitulo.value = "";
-    inputTitulo.disabled = true;
-    btnGuardar.disabled = true;
-    apunteActivoId = null;
-    btnEliminar.style.display = 'none';
-    btnExportarPdf.style.display = 'none';
-    quill.root.innerHTML = "";
-    quill.enable(false);
-
-    // Salimos del modo edición en móvil
+    inputTitulo.value = ""; inputTitulo.disabled = true;
+    btnGuardar.disabled = true; apunteActivoId = null;
+    btnEliminar.style.display = 'none'; btnExportarPdf.style.display = 'none';
+    quill.root.innerHTML = ""; quill.enable(false);
     document.body.classList.remove('mobile-editing');
 }
 
 function habilitarEditor() {
-    inputTitulo.disabled = false;
-    btnGuardar.disabled = false;
-    quill.enable(true);
-    btnExportarPdf.style.display = 'inline-block';
-
-    // Entramos al modo edición en móvil
+    inputTitulo.disabled = false; btnGuardar.disabled = false;
+    quill.enable(true); btnExportarPdf.style.display = 'inline-block';
     document.body.classList.add('mobile-editing');
 }
 
@@ -120,332 +115,241 @@ function procesarFiltros() {
     elementos.forEach(li => listaApuntesDOM.appendChild(li));
 }
 
-// 7. Funciones de Base de Datos (Consultas)
+// --- CONSULTAS DUALES (LECTURA) ---
 async function cargarMaterias() {
     listaMateriasDOM.innerHTML = "Cargando materias...";
-    try {
-        // ¿Quién está pidiendo las materias?
-        const usuarioId = auth.currentUser ? auth.currentUser.uid : 'local';
-        
-        // Creamos una consulta (query) con filtro (where)
-        const consulta = query(collection(db, "materias"), where("usuario_id", "==", usuarioId));
-        const querySnapshot = await getDocs(consulta);
-        listaMateriasDOM.innerHTML = "";
-        
-        if (querySnapshot.empty) {
-            listaMateriasDOM.innerHTML = "<li style='cursor:default; text-align:center; color:#7f8c8d;'>Aún no tienes materias.<br>Agrega una para comenzar.</li>";
-            return;
+    let materias = [];
+
+    if (getModo() === 'online') {
+        try {
+            const usuarioId = auth.currentUser?.uid;
+            if(!usuarioId) return;
+            const consulta = query(collection(db, "materias"), where("usuario_id", "==", usuarioId));
+            const querySnapshot = await getDocs(consulta);
+            querySnapshot.forEach(doc => materias.push({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            listaMateriasDOM.innerHTML = "<li>Error de conexión.</li>"; return;
         }
-        
-        querySnapshot.forEach((doc) => {
-            const materia = doc.data();
-            const li = document.createElement('li');
-            li.textContent = materia.nombre;
-            
-            li.addEventListener('click', () => {
-                materiaActivaId = doc.id;
-                document.getElementById('titulo-materia-actual').textContent = materia.nombre;
-                btnEditarMateria.style.display = 'inline-block';
-                btnEliminarMateria.style.display = 'inline-block';
-                controlesFiltro.style.display = 'flex';
-                btnNuevoApunte.disabled = false;
-                bloquearEditor();
-                cargarApuntesDeMateria(doc.id);
-            });
-            listaMateriasDOM.appendChild(li);
-        });
-    } catch (error) {
-        console.error("Error al cargar materias:", error);
-        listaMateriasDOM.innerHTML = "<li>Error de conexión.</li>";
+    } else {
+        materias = leerBDLocal('bd_materias');
     }
+
+    listaMateriasDOM.innerHTML = "";
+    if (materias.length === 0) {
+        listaMateriasDOM.innerHTML = "<li style='cursor:default; text-align:center; color:#7f8c8d;'>Aún no tienes materias.<br>Agrega una para comenzar.</li>";
+        return;
+    }
+
+    materias.forEach((materia) => {
+        const li = document.createElement('li');
+        li.textContent = materia.nombre;
+        li.addEventListener('click', () => {
+            materiaActivaId = materia.id;
+            document.getElementById('titulo-materia-actual').textContent = materia.nombre;
+            btnEditarMateria.style.display = 'inline-block';
+            btnEliminarMateria.style.display = 'inline-block';
+            controlesFiltro.style.display = 'flex';
+            btnNuevoApunte.disabled = false;
+            bloquearEditor();
+            cargarApuntesDeMateria(materia.id);
+        });
+        listaMateriasDOM.appendChild(li);
+    });
 }
 
 async function cargarApuntesDeMateria(materiaId) {
     listaApuntesDOM.innerHTML = "Cargando apuntes...";
-    try {
-        const q = query(collection(db, "apuntes"), where("materia_id", "==", materiaId), orderBy("fecha", "desc"));
-        const querySnapshot = await getDocs(q);
-        listaApuntesDOM.innerHTML = "";
-        
-        if (querySnapshot.empty) {
-            listaApuntesDOM.innerHTML = "<li style='cursor:default; color:#7f8c8d;'>No hay apuntes en esta materia.</li>";
-            bloquearEditor();
-            return;
-        }
-        
-        querySnapshot.forEach((documento) => {
-            const apunte = documento.data();
-            const li = document.createElement('li');
-            
-            let fechaTexto = "Guardando...";
-            if (apunte.fecha) {
-                const fechaObj = apunte.fecha.toDate();
-                fechaTexto = fechaObj.toLocaleDateString('es-MX');
-            }
-            
-            li.innerHTML = `<strong>${apunte.titulo}</strong><br><small style="color: #7f8c8d;">${fechaTexto}</small>`;
-            li.dataset.titulo = apunte.titulo ? apunte.titulo.toLowerCase() : "";
-            li.dataset.fecha = apunte.fecha ? apunte.fecha.toMillis() : 0;
-            
-            li.addEventListener('click', () => {
-                apunteActivoId = documento.id;
-                habilitarEditor();
-                btnEliminar.style.display = 'inline-block';
-                inputTitulo.value = apunte.titulo;
-                quill.root.innerHTML = apunte.contenido || "";
-            });
-            listaApuntesDOM.appendChild(li);
-        });
-    } catch (error) {
-        console.error("Error al cargar apuntes:", error);
-        listaApuntesDOM.innerHTML = "<li>Error al cargar apuntes.</li>";
-    }
-}
+    let apuntes = [];
 
-// 7.5 Sistema de verificación de arranque
-function verificarEstadoApp() {
-    const modoApp = localStorage.getItem('modoApp');
-    
-    if (modoApp) {
-        // Ya existe un registro. Ocultamos la ventana.
-        loginOverlay.classList.add('oculto');
-        
-        // IMPORTANTE: Solo cargamos directo si es modo local. 
-        // Si es online, esperaremos a que Firebase confirme la sesión.
-        if (modoApp === 'local') {
-            cargarMaterias(); 
+    if (getModo() === 'online') {
+        try {
+            const q = query(collection(db, "apuntes"), where("materia_id", "==", materiaId), orderBy("fecha", "desc"));
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach(doc => apuntes.push({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            listaApuntesDOM.innerHTML = "<li>Error al cargar.</li>"; return;
         }
     } else {
-        // Es la primera vez. La ventana se queda visible.
+        const todosLosApuntes = leerBDLocal('bd_apuntes');
+        apuntes = todosLosApuntes.filter(a => a.materia_id === materiaId).sort((a, b) => b.fecha - a.fecha);
     }
+
+    listaApuntesDOM.innerHTML = "";
+    if (apuntes.length === 0) {
+        listaApuntesDOM.innerHTML = "<li style='cursor:default; color:#7f8c8d;'>No hay apuntes en esta materia.</li>";
+        bloquearEditor(); return;
+    }
+
+    apuntes.forEach((apunte) => {
+        const li = document.createElement('li');
+        let fechaTexto = "Guardando...";
+        let fechaMs = 0;
+
+        if (getModo() === 'online' && apunte.fecha) {
+            fechaTexto = apunte.fecha.toDate().toLocaleDateString('es-MX');
+            fechaMs = apunte.fecha.toMillis();
+        } else if (getModo() === 'local' && apunte.fecha) {
+            fechaTexto = new Date(apunte.fecha).toLocaleDateString('es-MX');
+            fechaMs = apunte.fecha;
+        }
+
+        li.innerHTML = `<strong>${apunte.titulo}</strong><br><small style="color: #7f8c8d;">${fechaTexto}</small>`;
+        li.dataset.titulo = apunte.titulo ? apunte.titulo.toLowerCase() : "";
+        li.dataset.fecha = fechaMs;
+
+        li.addEventListener('click', () => {
+            apunteActivoId = apunte.id;
+            habilitarEditor();
+            btnEliminar.style.display = 'inline-block';
+            inputTitulo.value = apunte.titulo;
+            quill.root.innerHTML = apunte.contenido || "";
+        });
+        listaApuntesDOM.appendChild(li);
+    });
 }
 
-// 8. Event Listeners (Botones y Acciones)
-btnNuevoApunte.addEventListener('click', () => {
-    apunteActivoId = null;
-    habilitarEditor();
-    inputTitulo.value = "";
-    quill.root.innerHTML = "";
-    inputTitulo.focus();
-    btnEliminar.style.display = 'none';
-});
+// --- ESCRITURA DUAL (CRUD) ---
+btnNuevaMateria.addEventListener('click', async () => {
+    const nombre = await mostrarModal({ titulo: "Nueva Materia", mensaje: "Ingresa el nombre:", tipo: "prompt" });
+    if (!nombre || nombre.trim() === "") return;
 
-btnVolverMovil.addEventListener('click', () => {
-    bloquearEditor(); // Esto limpia el editor y nos regresa a las listas
+    if (getModo() === 'online') {
+        await addDoc(collection(db, "materias"), { nombre: nombre.trim(), usuario_id: auth.currentUser.uid });
+    } else {
+        const materias = leerBDLocal('bd_materias');
+        materias.push({ id: generarIdLocal(), nombre: nombre.trim() });
+        guardarBDLocal('bd_materias', materias);
+    }
+    mostrarNotificacion("Materia creada");
+    cargarMaterias();
 });
 
 btnGuardar.addEventListener('click', async () => {
-    if (!materiaActivaId || !inputTitulo.value) {
-        mostrarNotificacion("Completa todos los campos");
-        return;
-    }
-    try {
-        btnGuardar.disabled = true;
-        btnGuardar.textContent = "Guardando...";
+    if (!materiaActivaId || !inputTitulo.value) return mostrarNotificacion("Completa los campos");
+    
+    btnGuardar.disabled = true; btnGuardar.textContent = "Guardando...";
+    
+    if (getModo() === 'online') {
         if (apunteActivoId) {
-            await updateDoc(doc(db, "apuntes", apunteActivoId), {
-                titulo: inputTitulo.value,
-                contenido: quill.root.innerHTML
-            });
+            await updateDoc(doc(db, "apuntes", apunteActivoId), { titulo: inputTitulo.value, contenido: quill.root.innerHTML });
         } else {
-            // Identificamos quién es el usuario actual
-            const usuarioId = auth.currentUser ? auth.currentUser.uid : 'local';
-
-            await addDoc(collection(db, "apuntes"), {
-                materia_id: materiaActivaId,
-                titulo: inputTitulo.value,
-                contenido: quill.root.innerHTML,
-                fecha: serverTimestamp(),
-                usuario_id: usuarioId // <-- NUEVA ETIQUETA
-            });
+            await addDoc(collection(db, "apuntes"), { materia_id: materiaActivaId, titulo: inputTitulo.value, contenido: quill.root.innerHTML, fecha: serverTimestamp(), usuario_id: auth.currentUser.uid });
         }
-        cargarApuntesDeMateria(materiaActivaId);
-        if (!apunteActivoId) {
-            inputTitulo.value = "";
-            quill.root.innerHTML = "";
+    } else {
+        let apuntes = leerBDLocal('bd_apuntes');
+        if (apunteActivoId) {
+            const index = apuntes.findIndex(a => a.id === apunteActivoId);
+            apuntes[index].titulo = inputTitulo.value;
+            apuntes[index].contenido = quill.root.innerHTML;
         } else {
-            mostrarNotificacion("Apunte actualizado");
+            apuntes.push({ id: generarIdLocal(), materia_id: materiaActivaId, titulo: inputTitulo.value, contenido: quill.root.innerHTML, fecha: Date.now() });
         }
-    } catch (error) {
-        console.error("Error al guardar:", error);
-    } finally {
-        btnGuardar.disabled = false;
-        btnGuardar.textContent = "Guardar Apunte";
+        guardarBDLocal('bd_apuntes', apuntes);
     }
+
+    cargarApuntesDeMateria(materiaActivaId);
+    if (!apunteActivoId) { inputTitulo.value = ""; quill.root.innerHTML = ""; } 
+    else { mostrarNotificacion("Actualizado"); }
+    
+    btnGuardar.disabled = false; btnGuardar.textContent = "Guardar Apunte";
 });
 
 btnEliminar.addEventListener('click', async () => {
     if (!apunteActivoId) return;
-    const confirmar = await mostrarModal({
-        titulo: "Eliminar Apunte",
-        mensaje: "¿Estás seguro de que deseas eliminar este apunte de forma permanente?"
-    });
-    if (confirmar) {
-        try {
-            btnEliminar.disabled = true;
-            await deleteDoc(doc(db, "apuntes", apunteActivoId));
-            mostrarNotificacion("Apunte eliminado");
-            bloquearEditor();
-            cargarApuntesDeMateria(materiaActivaId);
-        } catch (error) {
-            console.error("Error al eliminar:", error);
-            mostrarNotificacion("Hubo un error al intentar eliminar el archivo.");
-        } finally {
-            btnEliminar.disabled = false;
-        }
-    }
-});
+    const confirmar = await mostrarModal({ titulo: "Eliminar", mensaje: "¿Seguro que deseas eliminar este apunte?" });
+    if (!confirmar) return;
 
-btnNuevaMateria.addEventListener('click', async () => {
-    const nombreMateria = await mostrarModal({ titulo: "Nueva Materia", mensaje: "Ingresa el nombre:", tipo: "prompt" });
-    if (nombreMateria && nombreMateria.trim() !== "") {
-        try {
-            // Identificamos quién es el usuario actual
-            const usuarioId = auth.currentUser ? auth.currentUser.uid : 'local';
-
-            // Guardamos la materia adjuntando tu ID
-            await addDoc(collection(db, "materias"), { 
-                nombre: nombreMateria.trim(),
-                usuario_id: usuarioId // <-- NUEVA ETIQUETA
-            });
-            
-            mostrarNotificacion("Materia creada con éxito");
-            cargarMaterias();
-        } catch (error) {
-            console.error("Error al agregar materia: ", error);
-            mostrarNotificacion("Error al crear la materia");
-        }
+    if (getModo() === 'online') {
+        await deleteDoc(doc(db, "apuntes", apunteActivoId));
+    } else {
+        let apuntes = leerBDLocal('bd_apuntes');
+        guardarBDLocal('bd_apuntes', apuntes.filter(a => a.id !== apunteActivoId));
     }
+    mostrarNotificacion("Eliminado");
+    bloquearEditor();
+    cargarApuntesDeMateria(materiaActivaId);
 });
 
 btnEditarMateria.addEventListener('click', async () => {
     if (!materiaActivaId) return;
     const nombreActual = document.getElementById('titulo-materia-actual').textContent;
     const nuevoNombre = await mostrarModal({ titulo: "Editar Materia", mensaje: "Nuevo nombre:", tipo: "prompt", valorInicial: nombreActual });
-    if (nuevoNombre && nuevoNombre.trim() !== "" && nuevoNombre !== nombreActual) {
-        try {
-            btnEditarMateria.disabled = true;
-            btnEditarMateria.textContent = "Guardando...";
-            await updateDoc(doc(db, "materias", materiaActivaId), { nombre: nuevoNombre.trim() });
-            document.getElementById('titulo-materia-actual').textContent = nuevoNombre.trim();
-            cargarMaterias();
-        } catch (error) {
-            console.error("Error al editar materia:", error);
-            mostrarNotificacion("Hubo un error al actualizar el nombre.");
-        } finally {
-            btnEditarMateria.disabled = false;
-            btnEditarMateria.textContent = "✏️ Editar Nombre";
-        }
+    if (!nuevoNombre || nuevoNombre.trim() === "" || nuevoNombre === nombreActual) return;
+
+    if (getModo() === 'online') {
+        await updateDoc(doc(db, "materias", materiaActivaId), { nombre: nuevoNombre.trim() });
+    } else {
+        let materias = leerBDLocal('bd_materias');
+        const index = materias.findIndex(m => m.id === materiaActivaId);
+        materias[index].nombre = nuevoNombre.trim();
+        guardarBDLocal('bd_materias', materias);
     }
+    document.getElementById('titulo-materia-actual').textContent = nuevoNombre.trim();
+    cargarMaterias();
 });
 
 btnEliminarMateria.addEventListener('click', async () => {
     if (!materiaActivaId) return;
-    const confirmar = await mostrarModal({
-        titulo: "Eliminar Materia",
-        mensaje: "⚠️ Advertencia: Esto eliminará la materia y TODOS los apuntes que contenga. ¿Estás seguro?",
-        tipo: "confirm"
-    });
-    if (confirmar) {
-        try {
-            btnEliminarMateria.disabled = true;
-            btnEliminarMateria.textContent = "Eliminando...";
-            
-            const q = query(collection(db, "apuntes"), where("materia_id", "==", materiaActivaId));
-            const querySnapshot = await getDocs(q);
-            const promesasEliminacion = [];
-            querySnapshot.forEach((documento) => promesasEliminacion.push(deleteDoc(doc(db, "apuntes", documento.id))));
-            
-            await Promise.all(promesasEliminacion);
-            await deleteDoc(doc(db, "materias", materiaActivaId));
-            
-            document.getElementById('titulo-materia-actual').textContent = "Selecciona una materia";
-            btnEditarMateria.style.display = 'none';
-            btnEliminarMateria.style.display = 'none';
-            listaApuntesDOM.innerHTML = '';
-            materiaActivaId = null;
-            bloquearEditor();
-            cargarMaterias();
-            mostrarNotificacion("Materia y apuntes eliminados correctamente");
-        } catch (error) {
-            console.error("Error al eliminar la materia:", error);
-            mostrarNotificacion("Hubo un error al eliminar la materia");
-        } finally {
-            btnEliminarMateria.disabled = false;
-            btnEliminarMateria.textContent = "🗑️ Eliminar Materia";
-        }
+    const confirmar = await mostrarModal({ titulo: "Eliminar Materia", mensaje: "Se eliminarán TODOS los apuntes. ¿Seguro?", tipo: "confirm" });
+    if (!confirmar) return;
+
+    if (getModo() === 'online') {
+        const q = query(collection(db, "apuntes"), where("materia_id", "==", materiaActivaId));
+        const qs = await getDocs(q);
+        await Promise.all(qs.docs.map(d => deleteDoc(doc(db, "apuntes", d.id))));
+        await deleteDoc(doc(db, "materias", materiaActivaId));
+    } else {
+        let materias = leerBDLocal('bd_materias');
+        let apuntes = leerBDLocal('bd_apuntes');
+        guardarBDLocal('bd_materias', materias.filter(m => m.id !== materiaActivaId));
+        guardarBDLocal('bd_apuntes', apuntes.filter(a => a.materia_id !== materiaActivaId));
     }
+
+    document.getElementById('titulo-materia-actual').textContent = "Selecciona una materia";
+    btnEditarMateria.style.display = 'none'; btnEliminarMateria.style.display = 'none';
+    listaApuntesDOM.innerHTML = ''; materiaActivaId = null; bloquearEditor();
+    cargarMaterias(); mostrarNotificacion("Eliminada");
 });
 
+// --- EVENTOS SIMPLES ---
+btnNuevoApunte.addEventListener('click', () => { apunteActivoId = null; habilitarEditor(); inputTitulo.value = ""; quill.root.innerHTML = ""; inputTitulo.focus(); btnEliminar.style.display = 'none'; });
+btnVolverMovil.addEventListener('click', bloquearEditor);
 inputBuscar.addEventListener('input', procesarFiltros);
 selectOrden.addEventListener('change', procesarFiltros);
+btnExportarPdf.addEventListener('click', () => { const original = document.title; document.title = inputTitulo.value || 'Apunte'; window.print(); document.title = original; });
 
-btnExportarPdf.addEventListener('click', () => {
-    const tituloOriginal = document.title;
-    const nombreArchivo = inputTitulo.value ? inputTitulo.value.trim() : 'Apunte';
-    document.title = nombreArchivo;
-    window.print();
-    document.title = tituloOriginal;
-});
-
-// Acción: Elegir el Modo Desconectado
+// --- SISTEMA DE LOGIN Y ARRANQUE ---
 btnLoginLocal.addEventListener('click', () => {
-    localStorage.setItem('modoApp', 'local'); // Guardamos la decisión
-    loginOverlay.classList.add('oculto');     // Quitamos la ventana
-    mostrarNotificacion("Modo desconectado activado");
-
-    cargarMaterias(); // Arrancamos la aplicación
+    localStorage.setItem('modoApp', 'local'); loginOverlay.classList.add('oculto');
+    mostrarNotificacion("Modo desconectado activado"); cargarMaterias();
 });
 
-// Acción: Iniciar sesión con Google de forma real
 btnLoginGoogle.addEventListener('click', async () => {
     try {
-        // Esto abre la ventana emergente oficial de Google
-        const resultado = await signInWithPopup(auth, provider);
-        const usuario = resultado.user;
-                 
-        localStorage.setItem('modoApp', 'online');
-        loginOverlay.classList.add('oculto');
-        mostrarNotificacion(`¡Bienvenido, ${usuario.displayName}!`);
-                 
+        const res = await signInWithPopup(auth, provider);
+        localStorage.setItem('modoApp', 'online'); loginOverlay.classList.add('oculto');
+        mostrarNotificacion(`¡Bienvenido, ${res.user.displayName}!`);
         cargarMaterias();
-    } catch (error) {
-        console.error("Error en login:", error);
-        mostrarNotificacion("Error al intentar iniciar sesión.");
-    }
-}); // <-- Asegúrate de que termine así
+    } catch (e) { mostrarNotificacion("Error al iniciar sesión."); }
+});
 
-// Observador en tiempo real del estado del usuario
 onAuthStateChanged(auth, (usuario) => {
     if (usuario) {
-        // Si hay un usuario logueado en la nube
         btnLoginSidebar.innerHTML = `🚪 <span class="texto-oculto-movil">Cerrar Sesión</span>`;
-        btnLoginSidebar.onclick = async () => {
-            await signOut(auth); // Cierra sesión en Firebase
-            localStorage.removeItem('modoApp'); // Borra la caché
-            location.reload(); // Recarga la página
-        };
-        
-        // NUEVO: Ahora sí, ya tenemos tu ID. Cargamos la base de datos de la nube.
-        if (localStorage.getItem('modoApp') === 'online') {
-            cargarMaterias();
-        }
-        
+        btnLoginSidebar.onclick = async () => { await signOut(auth); localStorage.removeItem('modoApp'); location.reload(); };
+        if (getModo() === 'online') cargarMaterias();
     } else {
-        // Si el usuario está en modo desconectado local
         btnLoginSidebar.innerHTML = `👤 <span class="texto-oculto-movil">Ingresar</span>`;
-        btnLoginSidebar.onclick = () => {
-            localStorage.removeItem('modoApp');
-            location.reload(); 
-        };
-        
-        // NUEVO: Si la sesión de Google caducó pero la app creía que estabas online, te reiniciamos
-        if (localStorage.getItem('modoApp') === 'online') {
-            localStorage.removeItem('modoApp');
-            location.reload();
-        }
+        btnLoginSidebar.onclick = () => { localStorage.removeItem('modoApp'); location.reload(); };
+        if (getModo() === 'online') { localStorage.removeItem('modoApp'); location.reload(); }
     }
 });
 
-// 9. Arranque de la App
+function verificarEstadoApp() {
+    const modoApp = localStorage.getItem('modoApp');
+    if (modoApp) {
+        loginOverlay.classList.add('oculto');
+        if (modoApp === 'local') cargarMaterias();
+    }
+}
 verificarEstadoApp();
